@@ -1,7 +1,12 @@
 for i in range(101):
     print(i)
-    answer = input('Should we break?  ')
+    while True:
+        answer = input('Should we break?  ')
+        if answer in ('yes', 'no'):
+            break
+        else:
+            print('Dont understand you  ')
+
     if answer == 'yes':
         break
-    while answer != 'no' and answer != 'yes':
-        answer = input('Dont understand you  ')
+
