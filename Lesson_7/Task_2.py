@@ -1,5 +1,8 @@
-import json
+with open('file_02.txt', 'w') as file:
+    file.write('First line\n')
+    file.write('Second line\n')
+    file.write('Third line\n')
 
-data = {'name': 'Dmitry', 'surname': 'Latokhin'}
-with open('file_03.json', 'w') as file:
-     json.dump(data, file)
+with open('file_02.txt', 'r') as file:
+    for line in file:
+        print(line)
