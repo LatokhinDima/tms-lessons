@@ -28,4 +28,3 @@ print()
 print('Друзья мужского пола:  ')
 for friend in male_person:
     friend.print_person_info()
-
