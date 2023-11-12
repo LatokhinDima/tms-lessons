@@ -17,7 +17,7 @@ class Student:
         else:
             return False
 
-#student = Student('Dmitry Latokhin', 6.8)
+# student = Student('Dmitry Latokhin', 6.8)
 
-#print(student.get_scholarship())
-#print(student.is_excellent())
+# print(student.get_scholarship())
+# print(student.is_excellent())
