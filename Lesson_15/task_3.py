@@ -6,10 +6,9 @@ def insertion_sort(lst: list) -> list:
     lst = copy.deepcopy(lst)
     a = len(lst)
     for i in range(1, a):
-        x = lst[i]
         j = i
 
-        while j > 0 and lst[j - 1] > x:
+        while j > 0 and lst[j - 1] > lst[i]:
             lst[j] = lst[j - 1]
             j -= 1
 
