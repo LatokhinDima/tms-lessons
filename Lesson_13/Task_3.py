@@ -8,7 +8,8 @@ with sqlite3.connect('sqlite.db') as connection:
 
 min_age = int(input('Введите минимальный возраст: '))
 result = connection.execute('SELECT * FROM user WHERE age >= ?;', (min_age,))
-for i in result.fetchall():
+
+for i in result.fetchall:
     print(i)
 
 

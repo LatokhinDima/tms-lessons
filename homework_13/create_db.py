@@ -1,9 +1,8 @@
 import sqlite3
 
 with sqlite3.connect('phone_book.db') as connection:
-    cur = connection.cursor()
-    cur.execute('''CREATE TABLE IF NOT EXISTS contacts(
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cursor = connection.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS phone_book(
                     name VARCHAR UNIQUE,
                     number VARCHAR
                     )''')
