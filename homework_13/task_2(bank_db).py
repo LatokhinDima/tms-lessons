@@ -1,6 +1,4 @@
 import random
-import json
-import os
 import sqlite3
 
 
@@ -11,7 +9,7 @@ def generate_random_digits(count) -> str:
 class BankAccount:
     def __init__(self, card_holder, money=0.0, card_number=None, account_number=None):
         self.card_holder: str = card_holder.upper()
-        self.money: float = money
+        self.money = money
         self.card_number: str = generate_random_digits(16) if card_number is None else card_number
         self.account_number: str = generate_random_digits(20) \
             if account_number is None else account_number
@@ -26,25 +24,21 @@ def convert_bank_account_to_dict(bank_account: BankAccount) -> dict:
     }
 
 
-def save_accounts(bank_account: dict[str, BankAccount], file_name: str):
+def save_accounts(card_holder, money, card_number, account_number):
     with sqlite3.connect('bank.db') as connection:
-        cursor = connection.cursor()
-        cursor.execute('DELETE FROM bank_accounts')
-        for account in bank_account:
-            cursor.execute('''INSERT INTO bank_accounts (card_holder , money, card_number, account_number) 
-                                    VALUES (?, ?, ?, ?)''',
-                           (account.card_holder, account.money, account.card_number1
-                            , account.account_number))
+        result = connection.execute("""INSERT OR REPLACE INTO bank_accounts(card_holder, money, card_number, account_number)
+        VALUES (?,?,?,?);""", (card_holder, money, card_number, account_number))
 
 
-def load_accounts(file_name) -> dict[str, BankAccount]:
+def load_accounts():
     with sqlite3.connect('bank.db') as connection:
-        cursor = connection.cursor()
-        cursor.execute('SELECT card_holder , money, card_number, account_number FROM bank_accounts')
-        result = cursor.fetchall()
-        bank_account = [BankAccount(card_holder=row[0], money=row[1], card_number=row[2], account_number=row[3])
-                        for row in result]
-        return bank_account
+        result = connection.execute("""SELECT * FROM bank_accounts""")
+        print(result.fetchall())
+
+
+def load_accounts_demo():
+    with sqlite3.connect('bank.db') as connection:
+        result = connection.execute("""SELECT * FROM bank_accounts""")
 
 
 class Bank:
@@ -57,23 +51,30 @@ class Bank:
         return account
 
     def add_money(self, account_number, money):
-        account = self.bank_accounts[account_number]
-        account.money += money
+        with sqlite3.connect('bank.db') as connection:
+            result = connection.execute("""UPDATE bank_accounts SET money = money + ? WHERE account_number =?;""",
+                                        (money, account_number))
 
     def transfer_money(self, from_account_number, to_account_number, money):
-        self.bank_accounts[from_account_number].money -= money
-        self.bank_accounts[to_account_number].money += money
+        with sqlite3.connect('bank.db') as connection:
+            result = connection.execute("""UPDATE bank_accounts SET money = money - ? WHERE account_number = ?""",
+                                        (money, from_account_number))
+        with sqlite3.connect('bank.db') as connection:
+            result = connection.execute("""UPDATE bank_accounts SET money = money + ? WHERE account_number = ?""",
+                                        (money, to_account_number))
 
     def external_transfer(self, from_account_number, to_external_number, money):
-        self.bank_accounts[from_account_number].money -= money
+        with sqlite3.connect('bank.db') as connection:
+            result = connection.execute("""UPDATE bank_accounts SET money = money - ? WHERE account_number = ?""",
+                                        (money, from_account_number))
+
         print(f'Банк перевёл {money}$ с вашего счёта {from_account_number} '
               f'на внешний счёт {to_external_number}')
 
 
 class Controller:
-    def __init__(self, data_file_name):
-        self.data_file_name = data_file_name
-        bank_accounts: dict[str, BankAccount] = load_accounts(data_file_name)
+    def __init__(self):
+        bank_accounts = load_accounts_demo()
         self.bank = Bank(bank_accounts)
 
     def run(self):
@@ -88,7 +89,12 @@ class Controller:
             print('5. Совершить платёж')
             action = int(input())
             if action == 0:
-                save_accounts(self.bank.bank_accounts, self.data_file_name)
+                for account_number, account in self.bank.bank_accounts.items():
+                    a = account.card_holder
+                    b = account.money
+                    c = account.card_number
+                    d = account.account_number
+                    save_accounts(a, b, c, d)
                 print('До свидания!')
                 break
             elif action == 1:
@@ -96,7 +102,14 @@ class Controller:
                 account = self.bank.open_account(card_holder)
                 print(f'Счёт {account.account_number} создан.')
             elif action == 2:
-                self.show_accounts()
+                for account_number, account in self.bank.bank_accounts.items():
+                    a = account.card_holder
+                    b = account.money
+                    c = account.card_number
+                    d = account.account_number
+                    save_accounts(a, b, c, d)
+                print('Все открытые счета на данный момент:')
+                load_accounts()
             elif action == 3:
                 account_number = input('Введите номер cчёта: ')
                 money = float(input(f'Количество денег: '))
@@ -115,15 +128,7 @@ class Controller:
                 print('Не поддерживаемая операция.')
             print()
 
-    def show_accounts(self):
-        print('Ваши открытые счета:')
-        for account_number, account in self.bank.bank_accounts.items():
-            print(f'Cчёт: {account_number}')
-            print(f'   Остаток на счету: {account.money}$')
-            print(f'   Номер карты: {account.card_number}')
-            print(f'   Держатель карты: {account.card_holder}')
-
 
 if __name__ == '__main__':
-    controller = Controller('data.json')
+    controller = Controller()
     controller.run()
