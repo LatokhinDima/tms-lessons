@@ -1,11 +1,12 @@
 import sqlite3
 from dataclasses import dataclass
 
-from flask import Flask
+from flask import Flask, abort
 
 DATABASE_FILE = 'sqlite.db'
 
 app = Flask(__name__)
+
 
 @dataclass
 class Article:
@@ -46,7 +47,7 @@ def save_article(article: Article):
 def articles_view():
     articles = get_all_articles()
     articles_html = '\n'.join(
-        f'<li>{article.title}</li>'
+        f'<li><a href="/article/{article.id}">{article.title}</a></li>'
         for article in articles)
 
     return f'''
@@ -64,5 +65,29 @@ def articles_view():
     </html>
     '''
 
+
+@app.route('/article/<int:id>')
+def articles_id_view(id: int):
+    article = get_article(id)
+    if article is None:
+        abort(404, 'Article not found')
+    return f'''
+    <html>
+        <head>
+            <title>Articles APP</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+        </head>
+        <body>
+            <p><a href="/articles">Go to home page</a></p>
+            <h1>{article.title}</h1>
+            <h3>{article.author}</h3
+            <h4>{article.text}</h4
+        </body>
+    </html>
+    '''
+
+
+
 if __name__ == '__main__':
     app.run(port=8080, debug=True)
+
