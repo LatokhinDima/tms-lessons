@@ -1,11 +1,15 @@
 import sqlite3
 from dataclasses import dataclass
 
-from flask import Flask, abort
+from flask import Flask, abort, redirect, session, request
+from flask_session import Session
 
 DATABASE_FILE = 'sqlite.db'
 
 app = Flask(__name__)
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 
 
 @dataclass
@@ -14,18 +18,19 @@ class Article:
     title: str
     text: str
     author: str
+    like_count: int
 
 
 def get_all_articles() -> list[Article]:
     with sqlite3.connect(DATABASE_FILE) as connection:
         execution_result = connection.execute(
-            'SELECT id, title, text, author FROM article')
+            'SELECT id, title, text, author, like_count FROM article')
         return [Article(*values) for values in execution_result.fetchall()]
 
 
 def get_article(article_id: int) -> Article:
     with sqlite3.connect(DATABASE_FILE) as connection:
-        execution_result = connection.execute('SELECT id, title, text, author '
+        execution_result = connection.execute('SELECT id, title, text, author, like_count '
                                               'FROM article '
                                               'WHERE id = ?', (article_id,))
         rows = execution_result.fetchall()
@@ -36,9 +41,9 @@ def get_article(article_id: int) -> Article:
 
 def save_article(article: Article):
     with sqlite3.connect(DATABASE_FILE) as connection:
-        data = (article.title, article.text, article.author, article.id)
+        data = (article.title, article.text, article.author, article.like_count, article.id)
         connection.execute('UPDATE article '
-                           'SET title = ?, text = ?, author = ? '
+                           'SET title = ?, text = ?, author = ?, like_count = ?  '
                            'WHERE id = ?', data)
 
 
@@ -81,13 +86,30 @@ def articles_id_view(id: int):
             <p><a href="/articles">Go to home page</a></p>
             <h1>{article.title}</h1>
             <h3>{article.author}</h3
-            <h4>{article.text}</h4
+            <p>{article.text}</p>
+            <form method="post" action="/article/like">
+                <input type="hidden" name="article_id" value="{article.id}"/>
+                <input type="submit" value="Like"/>
+            </form>
         </body>
     </html>
     '''
 
 
+@app.route('/article/like', methods=['POST'])
+def like_article():
+    article_id = int(request.form['article_id'])
+    article = get_article(article_id)
+    liked_articles = session.setdefault('liked_articles', set())
+    if article.id in liked_articles:
+        article.like_count -= 1
+        liked_articles.remove(article.id)
+    else:
+        article.like_count += 1
+        liked_articles.add(article.id)
+    save_article(article)
+    return redirect(f'/article/{article.id}')
+
 
 if __name__ == '__main__':
     app.run(port=8080, debug=True)
-
