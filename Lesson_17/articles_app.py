@@ -1,5 +1,6 @@
 import sqlite3
 from dataclasses import dataclass
+from typing import Optional
 
 from flask import Flask, abort, redirect, session, request
 from flask_session import Session
@@ -19,6 +20,28 @@ class Article:
     text: str
     author: str
     like_count: int
+
+
+@dataclass
+class User:
+    id: int
+    login: str
+    password: str
+
+
+def aut_user(login, password):
+    with sqlite3.connect(DATABASE_FILE) as connection:
+        execution_result = connection.execute(
+            f'SELECT * FROM users WHERE login = ?', (login,))
+        if x_user := execution_result.fetchone():
+            user = User(*x_user)
+        return user.password == password
+
+
+def get_user(login) -> User:
+    with sqlite3.connect(DATABASE_FILE) as connection:
+        execution_result = connection.execute(f'''SELECT * FROM users WHERE login = ?''', (login,))
+        return User(*execution_result.fetchone())
 
 
 def get_all_articles() -> list[Article]:
@@ -45,6 +68,25 @@ def save_article(article: Article):
         connection.execute('UPDATE article '
                            'SET title = ?, text = ?, author = ?, like_count = ?  '
                            'WHERE id = ?', data)
+
+
+@app.route("/auth")
+def page_auth():
+    return f'''
+                <html>
+                    <head>
+                        <title>Authenticate</title>
+                    </head>
+                        <body>
+                            <h1 style="text-align: center;">Authenticate</h1>
+                            <form action="/auth" method="post">
+                                Login:    <input type="text" name="login"/><br>
+                                Password: <input type="text" name="password"/><br>
+                                <input type="submit" value="Sign in">                        
+                            </form>
+                        </body>
+                </html>
+            '''
 
 
 @app.route('/')
@@ -90,6 +132,7 @@ def articles_id_view(id: int):
             <form method="post" action="/article/like">
                 <input type="hidden" name="article_id" value="{article.id}"/>
                 <input type="submit" value="Like"/>
+                <p>{article.like_count}</p>
             </form>
         </body>
     </html>
@@ -109,6 +152,37 @@ def like_article():
         liked_articles.add(article.id)
     save_article(article)
     return redirect(f'/article/{article.id}')
+
+
+@app.route("/auth", methods=["POST"])
+def authenticate():
+    login = request.form["login"]
+    password = request.form["password"]
+
+    if aut_user(login, password):
+        session["is_authenticated"] = True
+        user = get_user(login)
+        session["login"] = user.login
+        session["password"] = user.password
+        session["id"] = user.id
+        return redirect('/articles')
+    else:
+        return f'''
+                <html>
+                    <head>
+                        <title>Authenticate</title>
+                    </head>
+                        <body>
+                            <h1 style="text-align: center;">Authenticate</h1>
+                            <p>Invalid username or password!</p>
+                            <form action="/auth" method="post">
+                                Login:    <input type="text" name="login"/><br>
+                                Password: <input type="text" name="password"/><br>
+                                <input type="submit" value="Sign in">
+                            </form>
+                        </body>
+                </html>
+            '''
 
 
 if __name__ == '__main__':
