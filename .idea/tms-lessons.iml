@@ -8,4 +8,12 @@
     <orderEntry type="jdk" jdkName="Python 3.10 (tms-lessons) (3)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="PyNamespacePackagesService">
+    <option name="namespacePackageFolders">
+      <list>
+        <option value="$MODULE_DIR$/Lesson_40" />
+        <option value="$MODULE_DIR$/Lesson_40/Polls" />
+      </list>
+    </option>
+  </component>
 </module>
