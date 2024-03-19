@@ -1,0 +1,5 @@
+SQLAlchemy==2.0.28
+fastapi==0.110.0
+Alembic==1.13.1
+flask==3.0.2
+SQLAlchemy-Utils==0.41.1
